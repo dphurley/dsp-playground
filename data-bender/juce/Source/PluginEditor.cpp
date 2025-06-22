@@ -1,0 +1,191 @@
+#include "PluginEditor.h"
+
+DataBenderJuceAudioProcessorEditor::DataBenderJuceAudioProcessorEditor(DataBenderJuceAudioProcessor& p)
+    : AudioProcessorEditor(&p), processor(p)
+{
+    setSize(500, 350);
+    
+    // Setup labels
+    levelLabelL.setText("L", juce::dontSendNotification);
+    levelLabelL.setJustificationType(juce::Justification::centred);
+    levelLabelL.setColour(juce::Label::textColourId, juce::Colours::white);
+    addAndMakeVisible(levelLabelL);
+    
+    levelLabelR.setText("R", juce::dontSendNotification);
+    levelLabelR.setJustificationType(juce::Justification::centred);
+    levelLabelR.setColour(juce::Label::textColourId, juce::Colours::white);
+    addAndMakeVisible(levelLabelR);
+    
+    // Setup gain controls
+    inputGainSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    inputGainSlider.setRange(0.0, 4.0, 0.01);
+    inputGainSlider.setValue(1.0);
+    inputGainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    inputGainSlider.addListener(this);
+    inputGainSlider.setColour(juce::Slider::thumbColourId, juce::Colours::orange);
+    inputGainSlider.setColour(juce::Slider::trackColourId, juce::Colours::darkorange);
+    addAndMakeVisible(inputGainSlider);
+    
+    outputGainSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    outputGainSlider.setRange(0.0, 4.0, 0.01);
+    outputGainSlider.setValue(1.0);
+    outputGainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    outputGainSlider.addListener(this);
+    outputGainSlider.setColour(juce::Slider::thumbColourId, juce::Colours::lightblue);
+    outputGainSlider.setColour(juce::Slider::trackColourId, juce::Colours::darkblue);
+    addAndMakeVisible(outputGainSlider);
+    
+    inputGainLabel.setText("Input Gain", juce::dontSendNotification);
+    inputGainLabel.setJustificationType(juce::Justification::centred);
+    inputGainLabel.setColour(juce::Label::textColourId, juce::Colours::orange);
+    inputGainLabel.setFont(juce::Font(12.0f, juce::Font::bold));
+    addAndMakeVisible(inputGainLabel);
+    
+    outputGainLabel.setText("Output Gain", juce::dontSendNotification);
+    outputGainLabel.setJustificationType(juce::Justification::centred);
+    outputGainLabel.setColour(juce::Label::textColourId, juce::Colours::lightblue);
+    outputGainLabel.setFont(juce::Font(12.0f, juce::Font::bold));
+    addAndMakeVisible(outputGainLabel);
+    
+    // Start timer for VU meter updates
+    startTimerHz(30); // Update 30 times per second
+}
+
+DataBenderJuceAudioProcessorEditor::~DataBenderJuceAudioProcessorEditor() {
+    stopTimer();
+}
+
+void DataBenderJuceAudioProcessorEditor::paint(juce::Graphics& g) {
+    g.fillAll(juce::Colours::black);
+    g.setColour(juce::Colours::white);
+    g.setFont(20.0f);
+    g.drawFittedText("_Data Bender (Echo Devices) - Auto-Rebuild Test", getLocalBounds().removeFromTop(50), juce::Justification::centred, 1);
+    
+    // Draw VU meters
+    auto bounds = getLocalBounds();
+    bounds.removeFromTop(60); // Space for title
+    bounds.removeFromBottom(140); // Space for knobs and labels
+    
+    auto meterWidth = bounds.getWidth() / 6; // Smaller meters to make room for knobs
+    auto meterHeight = bounds.getHeight(); // Use remaining height
+    auto centerX = bounds.getCentreX();
+    
+    // Left meter
+    auto meterL = juce::Rectangle<int>(centerX - meterWidth - 10, bounds.getY(), meterWidth, meterHeight);
+    drawVUMeter(g, meterL, levelL, "L");
+    
+    // Right meter
+    auto meterR = juce::Rectangle<int>(centerX + 10, bounds.getY(), meterWidth, meterHeight);
+    drawVUMeter(g, meterR, levelR, "R");
+}
+
+void DataBenderJuceAudioProcessorEditor::resized() {
+    auto bounds = getLocalBounds();
+    bounds.removeFromTop(60); // Space for title
+    bounds.removeFromBottom(140); // Space for knobs and labels
+    
+    // Layout labels - position them above the knobs
+    auto meterWidth = bounds.getWidth() / 6;
+    auto centerX = bounds.getCentreX();
+    
+    // Left label - position above the input gain knob
+    levelLabelL.setBounds(centerX - meterWidth - 150, bounds.getBottom() + 20, meterWidth, 20);
+    
+    // Right label - position above the output gain knob
+    levelLabelR.setBounds(centerX + 150, bounds.getBottom() + 20, meterWidth, 20);
+    
+    // Layout gain controls - make them more visible
+    auto knobSize = 100; // Larger knobs
+    auto knobY = bounds.getBottom() + 50; // Position below the VU meters
+    
+    // Input gain (left side) - position more clearly
+    inputGainSlider.setBounds(centerX - knobSize - 150, knobY, knobSize, knobSize);
+    inputGainLabel.setBounds(centerX - knobSize - 150, knobY - 25, knobSize, 25);
+    
+    // Output gain (right side) - position more clearly
+    outputGainSlider.setBounds(centerX + 150, knobY, knobSize, knobSize);
+    outputGainLabel.setBounds(centerX + 150, knobY - 25, knobSize, 25);
+}
+
+void DataBenderJuceAudioProcessorEditor::timerCallback() {
+    // Get current levels from the processor
+    levelL = processor.getLevel(0);
+    levelR = processor.getLevel(1);
+    
+    // Remove test signal fallback
+    // Trigger repaint to update VU meters
+    repaint();
+    
+    // Debug output every 30 frames (about once per second)
+    static int debugCounter = 0;
+    debugCounter++;
+    if (debugCounter >= 30) {
+        debugCounter = 0;
+        // Print to console for debugging
+        juce::Logger::writeToLog("VU Levels - L: " + juce::String(levelL, 6) + " R: " + juce::String(levelR, 6));
+        // Also print to stdout for immediate visibility
+        std::cout << "VU Levels - L: " << levelL << " R: " << levelR << std::endl;
+    }
+}
+
+void DataBenderJuceAudioProcessorEditor::sliderValueChanged(juce::Slider* slider) {
+    if (slider == &inputGainSlider) {
+        processor.setInputGain((float)slider->getValue());
+    } else if (slider == &outputGainSlider) {
+        processor.setOutputGain((float)slider->getValue());
+    }
+}
+
+void DataBenderJuceAudioProcessorEditor::drawVUMeter(juce::Graphics& g, juce::Rectangle<int> bounds, float level, const juce::String& label) {
+    // Draw meter background
+    g.setColour(juce::Colours::darkgrey);
+    g.fillRect(bounds);
+    
+    // Draw meter border
+    g.setColour(juce::Colours::lightgrey);
+    g.drawRect(bounds, 1);
+    
+    // Make the meter much more sensitive to low levels
+    float normalizedLevel = 0.0f;
+    
+    if (level > 0.0f) {
+        // For very low levels, use a more sensitive scale
+        if (level < 0.001f) {
+            normalizedLevel = level * 1000.0f; // Scale up very low levels
+        } else if (level < 0.01f) {
+            normalizedLevel = level * 100.0f; // Scale up low levels
+        } else {
+            // For higher levels, use normal scale
+            normalizedLevel = juce::jlimit(0.0f, 1.0f, level);
+        }
+    }
+    
+    normalizedLevel = juce::jlimit(0.0f, 1.0f, normalizedLevel);
+    
+    // Draw level bar
+    auto levelBounds = bounds.reduced(2);
+    auto levelHeight = (int)(levelBounds.getHeight() * normalizedLevel);
+    auto levelY = levelBounds.getBottom() - levelHeight;
+    
+    if (levelHeight > 0) {
+        // Choose color based on level
+        juce::Colour meterColour;
+        if (level > 0.8f) {
+            meterColour = juce::Colours::red; // High level
+        } else if (level > 0.5f) {
+            meterColour = juce::Colours::yellow; // Medium level
+        } else if (level > 0.1f) {
+            meterColour = juce::Colours::green; // Low level
+        } else {
+            meterColour = juce::Colours::darkgreen; // Very low level
+        }
+        
+        g.setColour(meterColour);
+        g.fillRect(levelBounds.getX(), levelY, levelBounds.getWidth(), levelHeight);
+    }
+    
+    // Draw level value for debugging
+    g.setColour(juce::Colours::white);
+    g.setFont(8.0f);
+    g.drawText(juce::String(level, 6), bounds.getX(), bounds.getY() - 12, bounds.getWidth(), 12, juce::Justification::centred);
+} 

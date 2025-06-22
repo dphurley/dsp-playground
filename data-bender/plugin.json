@@ -1,0 +1,27 @@
+{
+  "slug": "data-bender",
+  "name": "Data Bender",
+  "version": "1.0.0",
+  "license": "MIT",
+  "brand": "DSP Playground",
+  "author": "DSP Playground",
+  "authorEmail": "",
+  "authorUrl": "",
+  "pluginUrl": "",
+  "manualUrl": "",
+  "sourceUrl": "",
+  "donateUrl": "",
+  "changelogUrl": "",
+  "modules": [
+    {
+      "slug": "data-bender",
+      "name": "Data Bender",
+      "description": "Portable DSP audio effect with stereo I/O",
+      "tags": [
+        "Effect",
+        "Distortion",
+        "Utility"
+      ]
+    }
+  ]
+} 

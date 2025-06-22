@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="30" height="128" version="1.1" viewBox="0 0 30 128" xmlns="http://www.w3.org/2000/svg">
+ <defs>
+  <linearGradient id="panelGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+   <stop offset="0%" style="stop-color:#2a2a2a;stop-opacity:1" />
+   <stop offset="100%" style="stop-color:#1a1a1a;stop-opacity:1" />
+  </linearGradient>
+  <linearGradient id="inputGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+   <stop offset="0%" style="stop-color:#4a4a4a;stop-opacity:1" />
+   <stop offset="100%" style="stop-color:#2a2a2a;stop-opacity:1" />
+  </linearGradient>
+  <linearGradient id="outputGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+   <stop offset="0%" style="stop-color:#6a6a6a;stop-opacity:1" />
+   <stop offset="100%" style="stop-color:#4a4a4a;stop-opacity:1" />
+  </linearGradient>
+ </defs>
+ 
+ <!-- Panel background -->
+ <rect width="30" height="128" fill="url(#panelGradient)" stroke="#404040" stroke-width="0.5"/>
+ 
+ <!-- Module title -->
+ <text x="15" y="12" text-anchor="middle" font-family="Arial" font-size="8" fill="#ffffff" font-weight="bold">DATA</text>
+ <text x="15" y="22" text-anchor="middle" font-family="Arial" font-size="8" fill="#ffffff" font-weight="bold">BENDER</text>
+ 
+ <!-- Input jacks -->
+ <circle cx="7.5" cy="25" r="3" fill="url(#inputGradient)" stroke="#606060" stroke-width="0.5"/>
+ <circle cx="22.5" cy="25" r="3" fill="url(#inputGradient)" stroke="#606060" stroke-width="0.5"/>
+ 
+ <!-- Input labels -->
+ <text x="7.5" y="35" text-anchor="middle" font-family="Arial" font-size="6" fill="#cccccc">L</text>
+ <text x="22.5" y="35" text-anchor="middle" font-family="Arial" font-size="6" fill="#cccccc">R</text>
+ 
+ <!-- Output jacks -->
+ <circle cx="7.5" cy="85" r="3" fill="url(#outputGradient)" stroke="#606060" stroke-width="0.5"/>
+ <circle cx="22.5" cy="85" r="3" fill="url(#outputGradient)" stroke="#606060" stroke-width="0.5"/>
+ 
+ <!-- Output labels -->
+ <text x="7.5" y="95" text-anchor="middle" font-family="Arial" font-size="6" fill="#cccccc">L</text>
+ <text x="22.5" y="95" text-anchor="middle" font-family="Arial" font-size="6" fill="#cccccc">R</text>
+ 
+ <!-- Decorative elements -->
+ <rect x="5" y="45" width="20" height="30" fill="none" stroke="#404040" stroke-width="0.5" rx="2"/>
+ <text x="15" y="60" text-anchor="middle" font-family="Arial" font-size="6" fill="#888888">DSP</text>
+ <text x="15" y="68" text-anchor="middle" font-family="Arial" font-size="6" fill="#888888">ENGINE</text>
+</svg> 
