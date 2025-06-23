@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 // Core DSP engine - designed to be portable across platforms
 class DataBenderEngine {
 public:
@@ -28,6 +30,12 @@ public:
     void setSampleRate(float sampleRate);
     float getSampleRate() const;
     
+    // Progressive silence trimming methods
+    void analyzeAndTrimSilence();
+    void clearTrimmedSegments();
+    void readFromTrimmedBuffer(float& outputL, float& outputR);
+    bool isSilence(int start, int length) const;
+    
 private:
     float sampleRate;
     float parameters[16]; // Space for future parameters
@@ -41,6 +49,23 @@ private:
     int audioStartPosition; // Store where audio starts (trim silence)
     bool isFrozen;
     bool bufferInitialized;
+    
+    // Progressive silence trimming
+    struct AudioSegment {
+        int start;
+        int length;
+        float* dataL;
+        float* dataR;
+    };
+    
+    std::vector<AudioSegment> trimmedSegments;
+    int totalTrimmedLength;
+    bool segmentsInitialized;
+    
+    // Silence detection parameters
+    static constexpr float SILENCE_THRESHOLD = 0.001f;
+    static constexpr int MIN_SILENCE_LENGTH = 1024; // Minimum silence block to trim (about 23ms at 44.1kHz)
+    static constexpr int MIN_AUDIO_LENGTH = 512; // Minimum audio block to keep (about 12ms at 44.1kHz)
     
     // Internal processing state
     void processFrame(float inputL, float inputR, float& outputL, float& outputR);
