@@ -47,6 +47,22 @@ DataBenderJuceAudioProcessorEditor::DataBenderJuceAudioProcessorEditor(DataBende
     outputGainLabel.setFont(juce::Font(12.0f, juce::Font::bold));
     addAndMakeVisible(outputGainLabel);
     
+    // Setup freeze button
+    freezeButton.setButtonText("FREEZE");
+    freezeButton.setClickingTogglesState(true);
+    freezeButton.addListener(this);
+    freezeButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkred);
+    freezeButton.setColour(juce::TextButton::buttonOnColourId, juce::Colours::red);
+    freezeButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    freezeButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
+    addAndMakeVisible(freezeButton);
+    
+    freezeLabel.setText("Buffer Freeze", juce::dontSendNotification);
+    freezeLabel.setJustificationType(juce::Justification::centred);
+    freezeLabel.setColour(juce::Label::textColourId, juce::Colours::red);
+    freezeLabel.setFont(juce::Font(12.0f, juce::Font::bold));
+    addAndMakeVisible(freezeLabel);
+    
     // Start timer for VU meter updates
     startTimerHz(30); // Update 30 times per second
 }
@@ -105,6 +121,15 @@ void DataBenderJuceAudioProcessorEditor::resized() {
     // Output gain (right side) - position more clearly
     outputGainSlider.setBounds(centerX + 150, knobY, knobSize, knobSize);
     outputGainLabel.setBounds(centerX + 150, knobY - 25, knobSize, 25);
+    
+    // Layout freeze button - center below the VU meters
+    auto buttonWidth = 120;
+    auto buttonHeight = 40;
+    auto buttonX = centerX - buttonWidth / 2;
+    auto buttonY = bounds.getBottom() + 10;
+    
+    freezeButton.setBounds(buttonX, buttonY, buttonWidth, buttonHeight);
+    freezeLabel.setBounds(buttonX, buttonY - 25, buttonWidth, 25);
 }
 
 void DataBenderJuceAudioProcessorEditor::timerCallback() {
@@ -112,7 +137,17 @@ void DataBenderJuceAudioProcessorEditor::timerCallback() {
     levelL = processor.getLevel(0);
     levelR = processor.getLevel(1);
     
-    // Remove test signal fallback
+    // Sync freeze button state with processor
+    bool processorFreezeState = processor.getFreeze();
+    if (freezeButton.getToggleState() != processorFreezeState) {
+        freezeButton.setToggleState(processorFreezeState, juce::dontSendNotification);
+        if (processorFreezeState) {
+            freezeButton.setButtonText("UNFREEZE");
+        } else {
+            freezeButton.setButtonText("FREEZE");
+        }
+    }
+    
     // Trigger repaint to update VU meters
     repaint();
     
@@ -133,6 +168,20 @@ void DataBenderJuceAudioProcessorEditor::sliderValueChanged(juce::Slider* slider
         processor.setInputGain((float)slider->getValue());
     } else if (slider == &outputGainSlider) {
         processor.setOutputGain((float)slider->getValue());
+    }
+}
+
+void DataBenderJuceAudioProcessorEditor::buttonClicked(juce::Button* button) {
+    if (button == &freezeButton) {
+        bool freezeState = freezeButton.getToggleState();
+        processor.setFreeze(freezeState);
+        
+        // Update button text based on state
+        if (freezeState) {
+            freezeButton.setButtonText("UNFREEZE");
+        } else {
+            freezeButton.setButtonText("FREEZE");
+        }
     }
 }
 

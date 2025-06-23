@@ -51,6 +51,11 @@ public:
     float getInputGain() const { return inputGain; }
     float getOutputGain() const { return outputGain; }
 
+    // Freeze buffer controls
+    void setFreeze(bool freeze) { dspEngine.setFreeze(freeze); }
+    bool getFreeze() const { return dspEngine.getFreeze(); }
+    void clearBuffer() { dspEngine.clearBuffer(); }
+
 private:
     DataBenderEngine dspEngine;
     

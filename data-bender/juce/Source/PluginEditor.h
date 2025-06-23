@@ -4,7 +4,7 @@
 #include <juce_audio_utils/juce_audio_utils.h>
 #include "PluginProcessor.h"
 
-class DataBenderJuceAudioProcessorEditor : public juce::AudioProcessorEditor, public juce::Timer, public juce::Slider::Listener
+class DataBenderJuceAudioProcessorEditor : public juce::AudioProcessorEditor, public juce::Timer, public juce::Slider::Listener, public juce::Button::Listener
 {
 public:
     DataBenderJuceAudioProcessorEditor(DataBenderJuceAudioProcessor&);
@@ -14,6 +14,7 @@ public:
     void resized() override;
     void timerCallback() override;
     void sliderValueChanged(juce::Slider* slider) override;
+    void buttonClicked(juce::Button* button) override;
 
 private:
     DataBenderJuceAudioProcessor& processor;
@@ -27,6 +28,10 @@ private:
     juce::Slider outputGainSlider;
     juce::Label inputGainLabel;
     juce::Label outputGainLabel;
+    
+    // Freeze button
+    juce::TextButton freezeButton;
+    juce::Label freezeLabel;
     
     // Custom level meter display
     float levelL = 0.0f;
