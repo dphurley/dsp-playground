@@ -63,6 +63,38 @@ DataBenderJuceAudioProcessorEditor::DataBenderJuceAudioProcessorEditor(DataBende
     freezeLabel.setFont(juce::Font(12.0f, juce::Font::bold));
     addAndMakeVisible(freezeLabel);
     
+    // Setup playback speed slider
+    speedSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    speedSlider.setRange(-2, 2, 1); // 5 discrete steps: -2, -1, 0, +1, +2
+    speedSlider.setValue(0);
+    speedSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    speedSlider.addListener(this);
+    speedSlider.setColour(juce::Slider::thumbColourId, juce::Colours::yellow);
+    speedSlider.setColour(juce::Slider::trackColourId, juce::Colours::gold);
+    addAndMakeVisible(speedSlider);
+    
+    speedLabel.setText("Playback Speed (Octaves)", juce::dontSendNotification);
+    speedLabel.setJustificationType(juce::Justification::centred);
+    speedLabel.setColour(juce::Label::textColourId, juce::Colours::yellow);
+    speedLabel.setFont(juce::Font(12.0f, juce::Font::bold));
+    addAndMakeVisible(speedLabel);
+    
+    // Setup repeats slider
+    repeatsSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    repeatsSlider.setRange(0.0, 1.0, 0.01);
+    repeatsSlider.setValue(0.0);
+    repeatsSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    repeatsSlider.addListener(this);
+    repeatsSlider.setColour(juce::Slider::thumbColourId, juce::Colours::purple);
+    repeatsSlider.setColour(juce::Slider::trackColourId, juce::Colours::darkmagenta);
+    addAndMakeVisible(repeatsSlider);
+    
+    repeatsLabel.setText("Repeats", juce::dontSendNotification);
+    repeatsLabel.setJustificationType(juce::Justification::centred);
+    repeatsLabel.setColour(juce::Label::textColourId, juce::Colours::purple);
+    repeatsLabel.setFont(juce::Font(12.0f, juce::Font::bold));
+    addAndMakeVisible(repeatsLabel);
+    
     // Start timer for VU meter updates
     startTimerHz(30); // Update 30 times per second
 }
@@ -80,7 +112,7 @@ void DataBenderJuceAudioProcessorEditor::paint(juce::Graphics& g) {
     // Draw VU meters
     auto bounds = getLocalBounds();
     bounds.removeFromTop(60); // Space for title
-    bounds.removeFromBottom(140); // Space for knobs and labels
+    bounds.removeFromBottom(280); // Increased space for knobs and labels
     
     auto meterWidth = bounds.getWidth() / 6; // Smaller meters to make room for knobs
     auto meterHeight = bounds.getHeight(); // Use remaining height
@@ -98,7 +130,7 @@ void DataBenderJuceAudioProcessorEditor::paint(juce::Graphics& g) {
 void DataBenderJuceAudioProcessorEditor::resized() {
     auto bounds = getLocalBounds();
     bounds.removeFromTop(60); // Space for title
-    bounds.removeFromBottom(140); // Space for knobs and labels
+    bounds.removeFromBottom(280); // Increased space for knobs and labels
     
     // Layout labels - position them above the knobs
     auto meterWidth = bounds.getWidth() / 6;
@@ -130,6 +162,18 @@ void DataBenderJuceAudioProcessorEditor::resized() {
     
     freezeButton.setBounds(buttonX, buttonY, buttonWidth, buttonHeight);
     freezeLabel.setBounds(buttonX, buttonY - 25, buttonWidth, 25);
+    
+    // Layout playback speed slider (centered below freeze button)
+    auto speedKnobSize = 80;
+    auto speedKnobY = bounds.getBottom() + 110; // Position below freeze button
+    speedSlider.setBounds(centerX - speedKnobSize / 2, speedKnobY, speedKnobSize, speedKnobSize);
+    speedLabel.setBounds(centerX - speedKnobSize / 2, speedKnobY - 25, speedKnobSize, 25);
+    
+    // Layout repeats slider (centered below playback speed slider)
+    auto repeatsKnobSize = 80;
+    auto repeatsKnobY = bounds.getBottom() + 220; // Increased spacing - position further below speed knob
+    repeatsSlider.setBounds(centerX - repeatsKnobSize / 2, repeatsKnobY, repeatsKnobSize, repeatsKnobSize);
+    repeatsLabel.setBounds(centerX - repeatsKnobSize / 2, repeatsKnobY - 25, repeatsKnobSize, 25);
 }
 
 void DataBenderJuceAudioProcessorEditor::timerCallback() {
@@ -168,6 +212,14 @@ void DataBenderJuceAudioProcessorEditor::sliderValueChanged(juce::Slider* slider
         processor.setInputGain((float)slider->getValue());
     } else if (slider == &outputGainSlider) {
         processor.setOutputGain((float)slider->getValue());
+    } else if (slider == &speedSlider) {
+        int octave = static_cast<int>(slider->getValue());
+        float speed = std::pow(2.0f, octave);
+        processor.setPlaybackSpeed(speed);
+        // Optionally update the text box to show the speed value
+        speedSlider.setTextValueSuffix(" (" + juce::String(speed, 2) + "x)");
+    } else if (slider == &repeatsSlider) {
+        processor.setRepeats((float)slider->getValue());
     }
 }
 
@@ -237,4 +289,10 @@ void DataBenderJuceAudioProcessorEditor::drawVUMeter(juce::Graphics& g, juce::Re
     g.setColour(juce::Colours::white);
     g.setFont(8.0f);
     g.drawText(juce::String(level, 6), bounds.getX(), bounds.getY() - 12, bounds.getWidth(), 12, juce::Justification::centred);
-} 
+} // Test comment for file watching
+// Another test comment
+// Test fswatch detection
+// Test change
+// Test file watching fix
+// Test change for fswatch
+// Test polling-based file watching

@@ -28,6 +28,13 @@ print_debug() {
     echo -e "${BLUE}[DEBUG]${NC} $1"
 }
 
+# Parse command line arguments
+OPEN_HOST=false
+if [ "$1" = "host" ]; then
+    OPEN_HOST=true
+    print_status "Will open AudioPluginHost after build"
+fi
+
 # Check if JUCE_DIR is set
 if [ -z "$JUCE_DIR" ]; then
     print_error "JUCE_DIR environment variable is not set."
@@ -79,21 +86,61 @@ build_plugin() {
     local duration=$((end_time - start_time))
     print_status "Build completed in ${duration}s"
     print_status "Plugin installed to ~/Library/Audio/Plug-Ins/Components/"
+    
+    # Open AudioPluginHost if requested
+    if [ "$OPEN_HOST" = true ]; then
+        print_status "Opening AudioPluginHost..."
+        if [ -f "../DataBender_Template.aph" ]; then
+            /Applications/JUCEAudioPluginHost.app/Contents/MacOS/AudioPluginHost ../DataBender_Template.aph &
+        else
+            /Applications/JUCEAudioPluginHost.app/Contents/MacOS/AudioPluginHost &
+        fi
+    fi
 }
 
 # Initial build
 print_status "Performing initial build..."
 build_plugin
 
+# If not watching (just host mode), exit here
+if [ "$OPEN_HOST" = true ] && [ "$2" != "watch" ]; then
+    print_status "Build complete and host opened. Exiting."
+    exit 0
+fi
+
 # Check if fswatch is available (faster than inotifywait)
 if command -v fswatch &> /dev/null; then
     print_status "Using fswatch for file watching (fastest)"
     print_status "Press Ctrl+C to stop watching"
     
-    # Watch for changes in source files
-    fswatch -o Source/ ../core/ | while read f; do
-        print_status "File change detected, rebuilding..."
-        build_plugin
+    # Create a temporary file to track changes
+    TEMP_FILE=$(mktemp)
+    
+    # Watch for changes in source files using a more reliable approach
+    fswatch -r Source/ ../core/ > "$TEMP_FILE" &
+    FSWATCH_PID=$!
+    
+    # Function to cleanup
+    cleanup() {
+        kill $FSWATCH_PID 2>/dev/null
+        rm -f "$TEMP_FILE"
+        exit 0
+    }
+    
+    # Set up signal handlers
+    trap cleanup SIGINT SIGTERM
+    
+    # Monitor the temp file for changes
+    while true; do
+        if [ -s "$TEMP_FILE" ]; then
+            CHANGED_FILE=$(head -1 "$TEMP_FILE")
+            print_status "File change detected: $CHANGED_FILE"
+            print_status "Rebuilding..."
+            build_plugin
+            # Clear the temp file
+            > "$TEMP_FILE"
+        fi
+        sleep 0.1
     done
 elif command -v inotifywait &> /dev/null; then
     print_status "Using inotifywait for file watching"
@@ -105,9 +152,23 @@ elif command -v inotifywait &> /dev/null; then
         build_plugin
     done
 else
-    print_warning "No file watcher found. Install fswatch for best performance:"
-    echo "  brew install fswatch"
-    echo ""
-    print_status "Falling back to manual rebuild. Run './build.sh fast' to rebuild."
-    exit 0
+    print_warning "No file watcher found. Using polling-based file watching..."
+    print_status "Press Ctrl+C to stop watching"
+    
+    # Polling-based file watching
+    LAST_MOD_TIME=0
+    
+    while true; do
+        # Get the most recent modification time of any source file
+        CURRENT_MOD_TIME=$(find Source/ ../core/ -name "*.cpp" -o -name "*.h" -o -name "*.hpp" 2>/dev/null | xargs stat -f "%m" 2>/dev/null | sort -n | tail -1)
+        
+        if [ "$CURRENT_MOD_TIME" != "" ] && [ "$CURRENT_MOD_TIME" -gt "$LAST_MOD_TIME" ]; then
+            print_status "File change detected (polling)"
+            print_status "Rebuilding..."
+            build_plugin
+            LAST_MOD_TIME=$CURRENT_MOD_TIME
+        fi
+        
+        sleep 1
+    done
 fi 

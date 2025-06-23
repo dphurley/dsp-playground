@@ -37,6 +37,14 @@ private:
     float levelL = 0.0f;
     float levelR = 0.0f;
     
+    // Playback speed control
+    juce::Slider speedSlider;
+    juce::Label speedLabel;
+    
+    // Repeats/stuttering control
+    juce::Slider repeatsSlider;
+    juce::Label repeatsLabel;
+    
     // Helper method to draw VU meters
     void drawVUMeter(juce::Graphics& g, juce::Rectangle<int> bounds, float level, const juce::String& label);
     

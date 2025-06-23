@@ -56,6 +56,14 @@ public:
     bool getFreeze() const { return dspEngine.getFreeze(); }
     void clearBuffer() { dspEngine.clearBuffer(); }
 
+    // Playback speed
+    void setPlaybackSpeed(float speed) { dspEngine.setPlaybackSpeed(speed); }
+    float getPlaybackSpeed() const { return dspEngine.getPlaybackSpeed(); }
+
+    // Repeats/stuttering
+    void setRepeats(float repeats) { dspEngine.setRepeats(repeats); }
+    float getRepeats() const { return dspEngine.getRepeats(); }
+
 private:
     DataBenderEngine dspEngine;
     
